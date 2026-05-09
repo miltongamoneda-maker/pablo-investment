@@ -82,7 +82,7 @@ function Btn({children,variant="primary",...props}){const s={primary:{background
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // COMPANY DASHBOARD with Supabase Cache
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-function CompanyDashboard({ ticker, name, onBack, holding, quote, onCacheUpdate }) {
+function CompanyDashboard({ ticker, name, onBack, holding, quote: quoteProp, onCacheUpdate }) {
   const [cd, setCd] = useState(null);
   const [chartData, setChartData] = useState([]);
   const [chartRange, setChartRange] = useState("1y");
@@ -90,7 +90,17 @@ function CompanyDashboard({ ticker, name, onBack, holding, quote, onCacheUpdate 
   const [aiLoading, setAiLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [customQ, setCustomQ] = useState("");
-  const [source, setSource] = useState(""); // "cache" or "live"
+  const [source, setSource] = useState("");
+  const [liveQuote, setLiveQuote] = useState(quoteProp || null);
+
+  // Always fetch live quote for this ticker
+  useEffect(() => {
+    (async () => {
+      const q = await getQuote(ticker);
+      if (q) setLiveQuote(q);
+    })();
+  }, [ticker]);
+  const quote = liveQuote || quoteProp;
 
   const fetchFromClaude = useCallback(async () => {
     try {
