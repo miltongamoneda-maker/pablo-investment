@@ -7,7 +7,7 @@ export async function POST(req) {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": process.env.ANTHROPIC_API_KEY || "",
-        "anthropic-version": "2023-06-01",
+        "anthropic-version": "2025-01-01",
       },
       body: JSON.stringify(body),
     });
