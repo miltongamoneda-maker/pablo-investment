@@ -104,7 +104,7 @@ function CompanyDashboard({ ticker, name, onBack, holding, quote: quoteProp, onC
 
   const fetchFromClaude = useCallback(async () => {
     try {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
+      const r = await fetch("/api/claude", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 1000,
@@ -172,7 +172,7 @@ Use real data only.`}],
       const ctx = cd ? JSON.stringify(cd) : `Ticker: ${ticker}`;
       const pi = quote ? `Precio: $${quote.price}` : "";
       const hi = holding ? `\nMi posición: ${holding.total_shares} acc, costo $${holding.avg_cost_basis}` : "";
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
+      const r = await fetch("/api/claude", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           model: "claude-sonnet-4-20250514", max_tokens: 1000,
@@ -347,7 +347,7 @@ function AddTxModal({open,onClose,onSaved,assets}){
 function AIPanel({holdings,quotes,onClose}){
   const [a,sA]=useState("");const [ld,sLd]=useState(false);const [q,sQ]=useState("");
   const ctx=()=>{let c="Mi portafolio:\n\n";holdings.forEach(h=>{const p=quotes[h.ticker]?.price||0;const v=h.total_shares*p;const pnl=v-h.total_invested;c+=`• ${h.ticker} (${h.name}): ${h.total_shares} acc, costo $${fmt(h.avg_cost_basis)}, precio $${fmt(p)}, valor $${fmt(v)}, P&L $${fmt(pnl)}\n`;});const tv=holdings.reduce((s,h)=>s+h.total_shares*(quotes[h.ticker]?.price||0),0);const ti=holdings.reduce((s,h)=>s+h.total_invested,0);c+=`\nTotal: $${fmt(tv)} | Invertido: $${fmt(ti)} | P&L: $${fmt(tv-ti)}`;return c;};
-  const run=async(p)=>{sLd(true);sA("");try{const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"Analista financiero experto. Español, conciso. Sin recomendaciones de compra/venta.",tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:`${ctx()}\n\n${p}`}]})});const d=await r.json();const t=d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"Error.";sA(t);await sb.post("ai_analyses",{analysis_type:"portfolio",prompt:p,response:t});}catch(e){sA("Error: "+e.message);}sLd(false);};
+  const run=async(p)=>{sLd(true);sA("");try{const r=await fetch("/api/claude",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:"Analista financiero experto. Español, conciso. Sin recomendaciones de compra/venta.",tools:[{type:"web_search_20250305",name:"web_search"}],messages:[{role:"user",content:`${ctx()}\n\n${p}`}]})});const d=await r.json();const t=d.content?.filter(c=>c.type==="text").map(c=>c.text).join("\n")||"Error.";sA(t);await sb.post("ai_analyses",{analysis_type:"portfolio",prompt:p,response:t});}catch(e){sA("Error: "+e.message);}sLd(false);};
   return <div style={{background:C.card,border:`1px solid ${C.accent}`,borderRadius:16,padding:24,marginTop:20}}>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:20}}>🤖</span><h3 style={{margin:0,color:C.accent,fontSize:16,fontFamily:"'Playfair Display',serif"}}>AI Portafolio</h3></div><button onClick={onClose} style={{background:"none",border:"none",color:C.textDim,cursor:"pointer",fontSize:18}}>✕</button></div>
     <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:16}}>{[{l:"General",p:"Análisis general: diversificación y riesgos"},{l:"Exposición",p:"Exposición por sector y tipo"},{l:"Rendimiento",p:"Rendimiento por posición"},{l:"Dividendos",p:"Análisis de dividendos"}].map(({l,p})=><Btn key={l} variant="secondary" onClick={()=>run(p)} style={{fontSize:12,padding:"6px 14px"}}>{l}</Btn>)}</div>
