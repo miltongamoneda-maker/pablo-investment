@@ -16,17 +16,22 @@ const sb = {
 };
 
 async function getQuote(ticker) {
-  try {
-    const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`);
-    const d = await r.json(); const m = d.chart.result[0].meta;
-    return { price: m.regularMarketPrice, prevClose: m.chartPreviousClose, currency: m.currency };
-  } catch {
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`;
+  const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+  // Try direct first, then proxy
+  for (const u of [url, proxyUrl]) {
     try {
-      const r2 = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=5d`)}`);
-      const d2 = await r2.json(); const m2 = d2.chart.result[0].meta;
-      return { price: m2.regularMarketPrice, prevClose: m2.chartPreviousClose, currency: m2.currency };
-    } catch { return null; }
+      const r = await fetch(u);
+      if (!r.ok) continue;
+      const txt = await r.text();
+      if (!txt.startsWith('{')) continue;
+      const d = JSON.parse(txt);
+      if (!d.chart?.result?.[0]?.meta) continue;
+      const m = d.chart.result[0].meta;
+      return { price: m.regularMarketPrice, prevClose: m.chartPreviousClose, currency: m.currency };
+    } catch { continue; }
   }
+  return null;
 }
 
 async function getChartData(ticker, range = "1y") {
